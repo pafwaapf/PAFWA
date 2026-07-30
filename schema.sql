@@ -279,6 +279,24 @@ drop policy if exists "img_auth_delete" on storage.objects;
 create policy "img_auth_delete" on storage.objects
   for delete using (bucket_id = 'item-images' and auth.uid() is not null);
 
+-- ── LEGACY RECEIPTS ─────────────────────────────────────────
+create table if not exists public.legacy_receipts (
+  id             uuid primary key default gen_random_uuid(),
+  receipt_no     text,
+  customer_name  text,
+  receipt_date   date,
+  total          numeric default 0,
+  items_json     jsonb default '[]'::jsonb,
+  file_name      text,
+  pdf_data       text,
+  created_at     timestamptz not null default now()
+);
+
+alter table public.legacy_receipts enable row level security;
+drop policy if exists "legacy_rcpt_all" on public.legacy_receipts;
+create policy "legacy_rcpt_all" on public.legacy_receipts
+  for all using (true);
+
 -- ════════════════════════════════════════════════════════════
 -- DONE! Schema is ready.
 -- Next step: Go to the app and create your first admin account
