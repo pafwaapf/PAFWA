@@ -1246,7 +1246,8 @@ function _doPrint(sale, cfg) {
     </table>
     <div style="margin-top:12px;text-align:left;font-weight:800;font-size:18px;color:${sale.paid ? '#15803d' : '#b91c1c'}">${sale.paid ? 'PAID' : 'UNPAID'}</div>
     <div class="foot"><div style="font-weight:700;font-size:14px">${cfg.receipt_footer || 'Received with Thanks'}</div><div style="font-weight:700;font-size:14px">Sig: <span class="sig-line"></span></div></div>
-    <div style="margin-top:10px;font-size:12px;line-height:1.6;text-align:left">
+    <div style="margin-top:16px;font-size:12px;line-height:1.6;text-align:left">
+      <div style="margin-bottom:6px">Kindly deposit amount in following account and share Bank Receipt / Transaction ID with LLO APF PAFWA</div>
       Bank: <strong>Bank AL-Habib</strong><br>
       Acct Title: <strong>PAFWA Fund APF</strong><br>
       Acctt No: <strong>0225008100598101</strong><br>
