@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="description" content="PAFWA APF Inventory & Management System">
+<title>PAFWA APF — Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="style.css?v=6">
+<style>
+  #GLOBAL-LOADER { position: fixed; top: 0; left: 0; width: 0%; height: 3px; background: var(--neon-cyan); z-index: 9999; transition: width 0.3s ease, opacity 0.5s ease; opacity: 0; pointer-events: none; box-shadow: 0 0 10px var(--neon-cyan); }
+  #GLOBAL-LOADER.on { opacity: 1; }
+  #FETCH-LABEL { position: fixed; top: 10px; right: 20px; font-size: 10px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px; z-index: 9999; text-transform: uppercase; display: none; background: rgba(15,23,42,0.8); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--neon-cyan); backdrop-filter: blur(5px); }
+</style>
+</head>
+<body>
+
+<div id="GLOBAL-LOADER"></div>
+<div id="FETCH-LABEL">Fetching Data…</div>
+
+<!-- Dynamic Background for Main App -->
+<div id="APP-BG-WRAPPER"></div>
+<div id="APP-BG-OVERLAY"></div>
+
+<!-- ═══ LOADING ═══ -->
+<div id="LOAD">
+  <div class="load-inner">
+    <div class="dynamic-logo-container" style="width:200px;height:200px;margin:0 auto;position:relative;z-index:2">
+      <img src="logo.png" alt="PAFWA Logo" onerror="this.src='logo_160.png'">
+    </div>
+    <h2 id="LOAD-TITLE">PAFWA APF</h2>
+    <p id="LOAD-MSG">Initialising secure system…</p>
+  </div>
+</div>
+
+<!-- ═══ SUPABASE SETUP ═══ -->
+<div class="overlay-full" id="CFG-SCREEN" style="display:none">
+  <div class="login-bg-overlay"></div>
+  <div class="glass-card">
+    <div class="card-logo dynamic-logo-container" style="width:200px;height:200px">
+      <img src="logo.png" alt="PAFWA Logo" onerror="this.src='logo_160.png'">
+    </div>
+    <div class="card-title">PAFWA APF</div>
+    <div class="card-sub">Pakistan Air Force Women Association · PAC Kamra</div>
+    <div class="card-center"><span class="card-badge">FIRST TIME SETUP</span></div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:18px;text-align:center;line-height:1.6">Setup your connection by scanning the QR code or entering details manually.</p>
+    <div id="cfg-err" class="al ale" style="display:none"></div>
+    
+    <!-- QR Scanner Section -->
+    <div id="qr-scan-section" style="margin-bottom:20px">
+      <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap">
+        <button class="btn bp" onclick="startQRCamera()" style="flex:1">📷 Scan QR with Camera</button>
+        <button class="btn bs" onclick="document.getElementById('qr-file-input').click()" style="flex:1">🖼️ Upload QR Image</button>
+      </div>
+      <input type="file" id="qr-file-input" accept="image/*" style="display:none" onchange="scanQRFromFile(this)">
+      <div id="qr-reader" style="display:none;width:100%;margin:10px 0"></div>
+      <div id="qr-status" style="text-align:center;font-size:12px;color:#94a3b8;margin-bottom:10px"></div>
+    </div>
+    
+    <div style="text-align:center;margin:15px 0;color:#64748b;font-size:12px">— OR ENTER MANUALLY —</div>
+    
+    <div class="fg"><label>Supabase Project URL *</label><input id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off"></div>
+    <div class="fg"><label>Supabase Anon (Public) Key *</label><textarea id="cfg-key" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea></div>
+    <button class="btn bp bfl" onclick="saveCfgAndInit()">🚀 Connect &amp; Start</button>
+    <button id="qr-stop-btn" class="btn bs bfl" style="display:none;margin-top:10px" onclick="stopQRCamera()">✕ Stop Camera</button>
+  </div>
+</div>
+
+<!-- ═══ FIRST ADMIN SETUP ═══ -->
+<div class="overlay-full" id="ADMIN-SCREEN" style="display:none">
+  <div class="login-bg-overlay"></div>
+  <div class="glass-card">
+    <div class="card-logo dynamic-logo-container" style="width:200px;height:200px;margin:0 auto;margin-bottom:12px">
+      <img src="logo.png" alt="PAFWA Logo" onerror="this.src='logo_160.png'">
+    </div>
+    <div class="card-title">Create Administrator</div>
+    <div class="card-sub">First time setup — create your administrator account</div>
+    <div style="text-align:center;margin-bottom:10px;">
+        <button class="link-btn" style="color:var(--rd); font-weight:bold;" onclick="if(confirm('Reset all settings?')) { localStorage.clear(); location.reload(); }">⚠️ Emergency Reset System</button>
+    </div>
+    <div class="card-center" style="margin-bottom:20px"><span class="card-badge">ONE TIME ONLY</span></div>
+    <div id="adm-err" class="al ale" style="display:none"></div>
+    <div class="r2">
+      <div class="fg"><label>Username *</label><input id="adm-u" value="admin" placeholder="admin"></div>
+      <div class="fg"><label>Full Name</label><input id="adm-fn" value="System Administrator"></div>
+    </div>
+    <div class="fg"><label>Password * (min 6 characters)</label><input id="adm-pw" type="password" placeholder="Strong password"></div>
+    <div class="fg"><label>Confirm Password *</label><input id="adm-pw2" type="password" placeholder="Repeat password"></div>
+    <button class="btn bp bfl" id="adm-btn" onclick="createFirstAdmin()">✅ Create Administrator Account</button>
+    <div style="text-align:center;margin-top:16px">
+      <button class="link-btn" onclick="showLogin()">I already have an account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="overlay-full" id="LOGIN" style="display:none">
+  <div class="login-bg-overlay"></div>
+  <div class="login-card">
+    <div class="login-brand dynamic-logo-container" style="width:200px;height:200px;margin:0 auto;margin-bottom:16px">
+      <img src="logo.png" alt="PAFWA Logo" onerror="this.src='logo_160.png'">
+    </div>
+    <div class="login-title">PAFWA APF</div>
+    <div class="login-sub" style="font-weight:600; color:#0f3b75;">Pakistan Air Force Women Association</div>
+    <div class="login-sub" style="margin-bottom:4px">PAC Kamra</div>
+    <div class="card-center" style="margin-bottom:8px"><span class="card-badge">INVENTORY, ACCOUNTING & SALES MANAGEMENT SYSTEM</span></div>
+    <div style="text-align:center;font-size:11px;color:#64748b;margin-bottom:20px; font-weight:600;">v3.2 Designed By : <strong style="color:var(--nv)">FL Abbas Khan</strong></div>
+    <div id="lclock" class="lclock"></div>
+    <div id="lerr" class="lerr"></div>
+    <div class="fg"><label>Username</label><input id="lu" placeholder="Enter username" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="fg" style="position:relative">
+      <label>Password</label>
+      <input id="lp" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+      <span class="pw-eye" onclick="togglePw('lp',this)">👁</span>
+    </div>
+    <button class="btn bp bfl" id="lbtn" onclick="doLogin()">🔐 Sign In</button>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="link-btn" style="color:var(--nv); font-weight:bold; font-size:13px;" onclick="showSignUp()">🆕 Create Admin Account (Sign Up)</button>
+    </div>
+    <div style="text-align:center;margin-top:20px; display:flex; justify-content:center; gap:15px;">
+      <button class="link-btn" onclick="showCfg()">⚙️ Change Config</button>
+      <button class="link-btn" style="color:var(--rd)" onclick="if(confirm('Reset all settings?')) { localStorage.clear(); location.reload(); }">🗑️ Reset App</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div id="APP">
+  <div id="APP-BG-WRAPPER"></div>
+  <div id="APP-BG-OVERLAY"></div>
+  <!-- Mobile overlay -->
+  <div id="SB-OVERLAY" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sb" id="SB">
+    <div class="sb-brand">
+      <div class="dynamic-logo-container" style="width:64px;height:64px;flex-shrink:0;">
+        <img src="logo.png" alt="PAFWA Logo" onerror="this.src='logo_160.png'">
+      </div>
+      <div>
+        <div class="sb-nm">PAFWA</div>
+        <div class="sb-sm">APF PAC KAMRA</div>
+      </div>
+      <button class="sb-close" onclick="closeSidebar()">✕</button>
+    </div>
+    <nav id="NAV">
+      <div class="nav-section">MAIN</div>
+      <button class="ni on" data-p="dash"><span class="ic">📊</span>Dashboard</button>
+      <button class="ni" data-p="inv"><span class="ic">📦</span>Inventory</button>
+      <button class="ni" data-p="maint"><span class="ic">🔧</span>Maintenance</button>
+      <button class="ni" data-p="pos"><span class="ic">🛒</span>Shop / POS</button>
+      <button class="ni" data-p="rcpt"><span class="ic">🧾</span>Receipts</button>
+      <div class="nav-section">FINANCE</div>
+      <button class="ni" data-p="acct"><span class="ic">💰</span>Accounting</button>
+      <button class="ni" data-p="rep"><span class="ic">📈</span>Reports</button>
+      <div class="nav-section" id="nav-sec-admin">ADMIN</div>
+      <button class="ni" data-p="logs"><span class="ic">📋</span>Activity Logs</button>
+      <button class="ni" data-p="users"><span class="ic">👥</span>Users</button>
+      <div class="nav-section">SYSTEM</div>
+      <button class="ni" data-p="bkp"><span class="ic">💾</span>Backup</button>
+      <button class="ni" data-p="cfg"><span class="ic">⚙️</span>Settings</button>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user-info">
+        <div class="sb-avatar" id="sb-avatar">A</div>
+        <div style="min-width:0">
+          <div class="sb-un" id="sbn" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div>
+          <div class="sb-ur" id="sbr">—</div>
+        </div>
+      </div>
+      <div class="sb-meta">
+        <div class="sb-tm" id="sbtm"></div>
+      </div>
+      <button class="btn-lo" style="margin-top:8px" onclick="doLogout()">⏻ Logout</button>
+    </div>
+  </aside>
+
+  <div id="MOBILE-NAV">
+    <div onclick="goTo('dash')">📊</div>
+    <div onclick="goTo('inv')">📦</div>
+    <div onclick="goTo('pos')">🛒</div>
+    <div onclick="goTo('rcpt')">🧾</div>
+    <div onclick="goTo('cfg')">⚙️</div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-wrap">
+    <!-- Desktop Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="hamburger" onclick="toggleSB()" id="ham-btn"><span></span><span></span><span></span></button>
+        <div class="app-title-area">
+          <span class="app-title">PAFWA Inventory & POS</span>
+          <span class="app-subtitle">Professional Management Suite</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time" id="top-time"></div>
+
+      </div>
+    </header>
+
+    <main id="MAIN">
+      <div id="page-dash" class="pg on"></div>
+      <div id="page-inv"  class="pg"></div>
+      <div id="page-maint" class="pg"></div>
+      <div id="page-pos"  class="pg"></div>
+      <div id="page-rcpt" class="pg"></div>
+      <div id="page-acct" class="pg"></div>
+      <div id="page-rep"  class="pg"></div>
+      <div id="page-logs" class="pg"></div>
+      <div id="page-users"class="pg"></div>
+      <div id="page-bkp"  class="pg"></div>
+      <div id="page-cfg"  class="pg"></div>
+    </main>
+
+    <!-- Native App Status Bar -->
+    <footer class="app-status-bar desktop-only">
+      <div class="status-left">
+        <span class="status-item">🟢 Connected to Supabase</span>
+        <span class="status-item">📁 Database: Cloud Realtime</span>
+      </div>
+      <div class="status-right">
+        <span class="status-item">👤 Session: <strong id="status-user">Admin</strong></span>
+        <span class="status-item">v3.2</span>
+      </div>
+    </footer>
+<!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav" id="BOTTOM-NAV">
+      <button class="ni on" data-p="dash"><span class="ic">📊</span><span class="lbl">Dashboard</span></button>
+      <button class="ni" data-p="inv"><span class="ic">📦</span><span class="lbl">Inventory</span></button>
+      <button class="ni" data-p="maint"><span class="ic">🔧</span><span class="lbl">Maint.</span></button>
+      <button class="ni" data-p="pos"><span class="ic">🛒</span><span class="lbl">POS</span></button>
+      <button class="ni" data-p="rcpt"><span class="ic">🧾</span><span class="lbl">Receipts</span></button>
+      <button class="ni" data-p="acct"><span class="ic">💰</span><span class="lbl">Accounts</span></button>
+      <button class="ni" data-p="rep"><span class="ic">📈</span><span class="lbl">Reports</span></button>
+      <button class="ni" data-p="logs"><span class="ic">📋</span><span class="lbl">Logs</span></button>
+      <button class="ni" data-p="users"><span class="ic">👥</span><span class="lbl">Users</span></button>
+      <button class="ni" data-p="bkp"><span class="ic">💾</span><span class="lbl">Backup</span></button>
+      <button class="ni" data-p="cfg"><span class="ic">⚙️</span><span class="lbl">Settings</span></button>
+    </nav>
+    <!-- End Mobile Bottom Navigation -->
+
+<!-- ═══ MODAL ═══ -->
+<div class="ov" id="OV" onclick="mmc(event)"><div class="mo" id="MB"></div></div>
+
+<!-- ═══ TOAST ═══ -->
+<div id="TOAST"></div>
+
+<!-- Import Progress Overlay -->
+<div id="import-overlay" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,59,117,0.95); backdrop-filter:blur(8px); align-items:center; justify-content:center; flex-direction:column; color:#fff;">
+  <div style="font-size:48px;margin-bottom:16px">📄</div>
+  <h2 style="margin-bottom:20px;font-size:24px;font-weight:800;letter-spacing:1px">Importing Stock Book...</h2>
+  <div style="width:100%; max-width:400px; height:12px; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.4)">
+    <div id="import-bar" style="width:0%; height:100%; background:#38bdf8; transition:width 0.2s; box-shadow:0 0 10px rgba(56,189,248,0.8)"></div>
+  </div>
+  <div id="import-txt" style="margin-top:16px; font-size:14px; font-weight:700; color:rgba(255,255,255,0.9)">Analyzing data...</div>
+  <div id="import-log" style="margin-top:20px; width:100%; max-width:600px; height:200px; background:rgba(0,0,0,0.5); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; overflow-y:auto; color:#a3e635; text-align:left; border:1px solid rgba(255,255,255,0.2);"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="app.js?v=6"></script>
+</body>
+</html>

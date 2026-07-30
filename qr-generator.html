@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAFWA - Generate Setup QR Code</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #3b82f6;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .qr-container {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .instructions {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.8;
+            margin: 20px 0;
+        }
+        .instructions strong { color: #3b82f6; }
+        .warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid #f59e0b;
+            color: #fbbf24;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            color: #60a5fa;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .encoded {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 10px;
+            word-break: break-all;
+            color: #06b6d4;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📱 PAFWA SETUP</h1>
+        <p class="subtitle">Scan this QR code to connect your app</p>
+        
+        <div class="qr-container">
+            <img id="qr-image" width="300" height="300" alt="QR Code">
+        </div>
+        
+        <button class="btn" onclick="downloadQR()">
+            ⬇️ Download QR Image
+        </button>
+        
+        <div class="instructions">
+            <strong>📋 How to use:</strong><br>
+            1. Download the QR code image above<br>
+            2. Print it or save on phone<br>
+            3. Give it to your clients<br>
+            4. They scan it using the app's "Scan QR" button<br>
+            5. App automatically connects!
+        </div>
+        
+        <div class="info-box">
+            <strong>🔗 App URL:</strong><br>
+            https://maverick1427.github.io/Google-Antigravity-V1/
+        </div>
+        
+        <div class="warning">
+            ⚠️ Keep this QR code private! Anyone who scans it can access your database.
+        </div>
+        
+        <div class="encoded">
+            <strong>Encoded Data (for verification):</strong><br>
+            <span id="encoded-data"></span>
+        </div>
+    </div>
+    
+    <script>
+        // YOUR CREDENTIALS - This is what gets encoded
+        const SUPABASE_URL = 'https://isxefzwqtsiimhsfiuet.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzeGVmendxdHNpaW1oc2ZpdWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNjYxOTksImV4cCI6MjA5Mjg0MjE5OX0.c7rxoBQOPzOrfB9WAc-UXR9bS5GkSUA-nxA5pQwysXc';
+        
+        // Combine and encode
+        const combined = SUPABASE_URL + '|' + SUPABASE_KEY;
+        const encoded = btoa(combined);
+        
+        // Generate QR code using free API
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(encoded)}`;
+        
+        // Display
+        document.getElementById('qr-image').src = qrUrl;
+        document.getElementById('encoded-data').textContent = encoded;
+        
+        // Download function
+        function downloadQR() {
+            const link = document.createElement('a');
+            link.href = qrUrl;
+            link.download = 'PAFWA_Setup_QR.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

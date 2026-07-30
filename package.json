@@ -1,0 +1,20 @@
+{
+  "name": "pafwa-inventory-system",
+  "version": "1.0.0",
+  "description": "PAFWA Inventory & Management System",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "inventory",
+    "pafwa",
+    "pos"
+  ],
+  "author": "FL Abbas Khan",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dexie": "^3.2.4"
+  }
+}
