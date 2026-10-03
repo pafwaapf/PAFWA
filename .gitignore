@@ -20,5 +20,9 @@ Thumbs.db
 *.zip
 *.tar.gz
 
+# PDF and Bill documents
+Bills in PDF/
+*.pdf
+
 # Local scratch and logs
 scratch/
