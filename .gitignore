@@ -1,0 +1,24 @@
+# Environment and sensitive credentials
+.env
+.env.local
+.env.*.local
+credentials.txt
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Large temporary archive files
+*.zip
+*.tar.gz
+
+# Local scratch and logs
+scratch/
